@@ -252,20 +252,22 @@ function RootLayoutNav() {
     if (!user) {
       // Redirect to login if not already there
       if (!currentPath.startsWith('(auth)')) {
-        log.info('No user, redirecting to login');
+        log.info('RootLayoutNav: No user, redirecting to (auth)/login');
         router.replace('/(auth)/login');
       }
-    } else if (user && isOnboarded === false) {
-      // Redirect to onboarding if not already there
-      if (!currentPath.startsWith('(onboarding)')) {
-        log.info('User not onboarded, redirecting to profile setup');
-        router.replace('/(onboarding)/profile');
-      }
-    } else if (user && isOnboarded === true) {
-      // Redirect to main app if coming from auth or onboarding
-      if (currentPath.startsWith('(auth)') || currentPath.startsWith('(onboarding)')) {
-        log.info('User is onboarded, redirecting to main app group: /(app)');
-        router.replace('/(app)'); // Navigate to the (app) group's layout
+    } else { // User exists
+      if (isOnboarded === false) {
+        // User is authenticated but not onboarded
+        if (!currentPath.startsWith('(onboarding)')) {
+          log.info('RootLayoutNav: User authenticated but not onboarded, redirecting to (onboarding)/index');
+          router.replace('/(onboarding)/index'); // Always start at (onboarding)/index
+        }
+      } else if (isOnboarded === true) {
+        // User is authenticated and onboarded
+        if (currentPath.startsWith('(auth)') || currentPath.startsWith('(onboarding)')) {
+          log.info('RootLayoutNav: User authenticated and onboarded, redirecting to /(app)');
+          router.replace('/(app)'); // Navigate to the (app) group's layout
+        }
       }
     }
   }, [user, loading, isOnboarded, isInitialized, segments]);

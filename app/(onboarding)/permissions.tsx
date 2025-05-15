@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase';
 
 export default function PermissionsSetup() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, updateUserProfile, fetchCurrentUser } = useAuth();
   const [cameraPermission, setCameraPermission] = useState<boolean | null>(null);
   const [notificationPermission, setNotificationPermission] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -113,29 +113,33 @@ export default function PermissionsSetup() {
     setError(null);
     
     try {
-      console.log('Finalizing onboarding process for user:', user.id);
+      console.log('Permissions step: Finalizing onboarding process for user:', user.id);
       
-      // Ensure the user is marked as onboarded in the database
-      const { error } = await supabase
-        .from('users')
-        .update({ 
-          is_onboarded: true,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id);
+      // Use AuthContext's updateUserProfile to set is_onboarded and refresh context
+      // This ensures the AuthContext state is updated immediately
+      const updatedProfile = await updateUserProfile({ is_onboarded: true });
       
-      if (error) {
-        console.error('Error updating onboarding status:', error);
-        throw error;
+      if (!updatedProfile || updatedProfile.is_onboarded !== true) {
+        console.error('Permissions step: Failed to update onboarding status via AuthContext or status not true.');
+        // Fallback direct update if context update seems problematic
+        const { error: directUpdateError } = await supabase
+          .from('users')
+          .update({ is_onboarded: true, updated_at: new Date().toISOString() })
+          .eq('id', user.id);
+        
+        if (directUpdateError) {
+          throw directUpdateError;
+        }
+        
+        // Re-fetch user to ensure context is definitely updated if fallback was used
+        await fetchCurrentUser();
       }
       
-      console.log('Onboarding completed successfully');
+      console.log('Permissions step: Onboarding completed and user marked as onboarded.');
       
-      // Add a small delay to ensure the database update propagates
-      setTimeout(() => {
-        // Navigate to the main app
-        router.push('/');
-      }, 500);
+      // Navigate to a neutral or main app route
+      // RootLayoutNav will then see isOnboarded = true and allow access
+      router.replace('/(app)');
     } catch (err) {
       console.error('Error completing onboarding:', err);
       setError('Failed to complete setup. Please try again.');

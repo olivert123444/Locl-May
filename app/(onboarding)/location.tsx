@@ -403,54 +403,30 @@ export default function LocationSetup() {
       // Save to database using our helper function
       await saveLocationToDatabase(locationData);
       
-      // Mark the user as onboarded to prevent the redirect loop
-      console.log('Marking user as onboarded after successful location setup');
-      try {
-        // Update the is_onboarded flag using the global context function
-        const updatedProfile = await updateUserProfile({ is_onboarded: true });
-        
-        if (!updatedProfile) {
-          throw new Error('Failed to update onboarding status');
-        }
-        
-        console.log('Successfully marked user as onboarded after location setup');
-        
-        // Fetch the latest user data to ensure we have the most up-to-date state
-        console.log('Fetching latest user data to confirm onboarding status');
-        const freshProfile = await fetchCurrentUser();
-        
-        if (freshProfile) {
-          console.log('Confirmed user onboarding status from fresh data:', freshProfile.is_onboarded);
-          
-          if (freshProfile.is_onboarded !== true) {
-            console.warn('Warning: User still not marked as onboarded in fresh data');
-          }
-        }
-        
-        // Clear the timeout since we're done
-        clearTimeout(timeout);
+      // Clear the timeout if it exists
+      if (timeoutId) {
+        clearTimeout(timeoutId);
         setTimeoutId(null);
-        
-        // Navigate directly to the main app
-        console.log('Redirecting to main app');
-        router.replace('/(tabs)/nearby');
-      } catch (error: any) {
-        console.error('Error updating onboarding status:', error);
-        setErrorMsg(`Failed to complete onboarding: ${error.message || 'Unknown error'}`);
-        
-        // Clear the timeout if it's still active
-        clearTimeout(timeout);
-        setTimeoutId(null);
-        setIsLoading(false);
       }
+      
+      // Navigate to the next step in the onboarding flow (profile setup)
+      console.log('Location saved successfully, proceeding to profile setup');
+      router.push('/(onboarding)/profile');
     } catch (error: any) {
       console.error('Error saving location:', error);
       // Provide more specific error message to help with debugging
       setErrorMsg(`Failed to save your location: ${error.message || 'Unknown error'}`);
+      
+      // Clear the timeout if it's still active
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        setTimeoutId(null);
+      }
+      setIsLoading(false);
     } finally {
       // Clear the timeout if it's still active
       if (timeoutId) {
-        clearTimeout(timeout);
+        clearTimeout(timeoutId);
         setTimeoutId(null);
       }
       setIsLoading(false);

@@ -357,7 +357,6 @@ export default function ProfileScreen() {
         bio: string | null;
         is_seller: boolean;
         is_buyer: boolean;
-        is_onboarded: boolean;
         updated_at: string;
         avatar_url?: string; // Make avatar_url optional
       } = {
@@ -365,7 +364,6 @@ export default function ProfileScreen() {
         bio: bio ? bio.trim() : null,
         is_seller: isSeller,
         is_buyer: isBuyer,
-        is_onboarded: true,
         updated_at: new Date().toISOString()
       };
       
@@ -401,10 +399,10 @@ export default function ProfileScreen() {
         // Continue even if refresh fails
       }
       
-      // Step 5: Navigate to main app
-      console.log('DIRECT UPDATE: Navigation to main app');
+      // Step 5: Navigate to permissions screen (next step in onboarding)
+      console.log('DIRECT UPDATE: Navigation to permissions screen');
       setIsLoading(false);
-      router.replace('/(tabs)/nearby');
+      router.push('/(onboarding)/permissions');
       
     } catch (error) {
       console.error('DIRECT UPDATE: Overall profile update failed:', error);

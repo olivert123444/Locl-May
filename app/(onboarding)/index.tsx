@@ -13,24 +13,22 @@ export default function OnboardingStart() {
   const [checkingLocation, setCheckingLocation] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
-  // Add a ref to track if we're already in the process of redirecting
-  const isRedirectingRef = useRef(false);
-  
   // Track if this component is mounted
   const isMountedRef = useRef(true);
   
   // Track if user is onboarded
   const [isOnboarded, setIsOnboarded] = useState(false);
   
-  // Check if user is already onboarded when component mounts
+  // Initialize location permissions when component mounts
   useEffect(() => {
     if (!user) return;
     
-    console.log('Onboarding index mounted, checking onboarding status...');
+    console.log('Onboarding index mounted, checking location permissions...');
     isMountedRef.current = true;
     
-    // First check if user is already onboarded
-    checkOnboardingStatus();
+    // Proceed directly with location checks
+    // RootLayoutNav handles redirection if user is already onboarded
+    checkLocationPermissions();
     
     // Cleanup timeout on unmount
     return () => {
@@ -41,135 +39,7 @@ export default function OnboardingStart() {
     };
   }, [user]);
   
-  // Add an effect to detect navigation and prevent unnecessary redirects
-  useEffect(() => {
-    // Set a flag when we're about to navigate away
-    const handleBeforeNavigate = () => {
-      console.log('Navigation in progress, setting isRedirecting flag');
-      isRedirectingRef.current = true;
-      
-      // Reset the flag after a delay to allow for future navigations
-      setTimeout(() => {
-        if (isMountedRef.current) {
-          isRedirectingRef.current = false;
-        }
-      }, 5000);
-    };
-    
-    // In Expo Router, we can detect navigation by watching for changes
-    // and setting our flag before the navigation completes
-    const originalReplace = router.replace;
-    router.replace = function(...args: Parameters<typeof router.replace>) {
-      handleBeforeNavigate();
-      return originalReplace.apply(this, args);
-    };
-    
-    const originalPush = router.push;
-    router.push = function(...args: Parameters<typeof router.push>) {
-      handleBeforeNavigate();
-      return originalPush.apply(this, args);
-    };
-    
-    return () => {
-      // Restore original methods
-      router.replace = originalReplace;
-      router.push = originalPush;
-    };
-  }, [router]);
-  
-  // Function to check if user is already onboarded
-  const checkOnboardingStatus = async () => {
-    if (!user) return;
-    
-    setIsLoading(true);
-    setError(null);
-    
-    // Set a timeout to show an error if the check takes too long
-    const timeout = setTimeout(() => {
-      setError('Checking onboarding status is taking longer than expected. Please try again.');
-      setIsLoading(false);
-    }, 10000); // 10 seconds timeout
-    
-    setTimeoutId(timeout);
-    
-    try {
-      // Check if user is already onboarded
-      const { data, error } = await supabase
-        .from('users')
-        .select('is_onboarded')
-        .eq('id', user.id)
-        .single();
-      
-      // Clear the timeout since we got a response
-      clearTimeout(timeout);
-      setTimeoutId(null);
-      
-      if (error) {
-        console.error('Error checking onboarding status:', error);
-        // Continue with location check as fallback
-        checkLocationPermissions();
-        return;
-      }
-      
-      if (data && (data.is_onboarded === true || data.is_onboarded === 'true')) {
-        setIsOnboarded(true);
-        
-        // Check if we're already at the main app or in the process of redirecting
-        // Use the current pathname to determine if we're at the main app
-        // This is compatible with Expo Router
-        const pathname = (window as any).location?.pathname || '';
-        const isAtMainApp = pathname === '/' || pathname.startsWith('/(tabs)');
-        
-        if (isAtMainApp) {
-          console.log('User is already onboarded and at main app, no redirect needed');
-          return;
-        }
-        
-        // Only redirect if we're not already in the process of redirecting
-        if (!isRedirectingRef.current) {
-          console.log('User is already onboarded, redirecting to home');
-          isRedirectingRef.current = true;
-          
-          // Set a timeout to reset the redirecting flag in case navigation fails
-          setTimeout(() => {
-            isRedirectingRef.current = false;
-          }, 5000);
-          
-          // Reset loading state before navigation
-          setIsLoading(false);
-          setCheckingLocation(false);
-          
-          // Force a slight delay before redirecting to ensure state is stable
-          setTimeout(() => {
-            if (isMountedRef.current && !isAtMainApp) {
-              console.log('Executing navigation to home...');
-              // Use a double navigation to break the stack
-              router.replace('/');
-              setTimeout(() => {
-                if (isMountedRef.current) {
-                  router.push('/');
-                }
-              }, 100);
-            }
-          }, 100);
-          return;
-        } else {
-          console.log('Already redirecting, skipping redundant redirect to home');
-          return;
-        }
-      }
-      
-      // User exists but is not onboarded, proceed with location check
-      console.log('User is not onboarded, checking location permissions...');
-      checkLocationPermissions();
-    } catch (error) {
-      console.error('Error in onboarding status check:', error);
-      clearTimeout(timeout);
-      setTimeoutId(null);
-      setError('Failed to check onboarding status. Please try again.');
-      setIsLoading(false);
-    }
-  };
+  // Function to check location permissions and proceed with onboarding
   
   // Function to check if location permissions are granted and request them if needed
   const checkLocationPermissions = async () => {
@@ -416,7 +286,7 @@ export default function OnboardingStart() {
                 style={styles.retryButton} 
                 onPress={() => {
                   setError(null);
-                  checkOnboardingStatus();
+                  checkLocationPermissions();
                 }}
               >
                 <Text style={styles.retryButtonText}>Retry</Text>
