@@ -17,18 +17,18 @@ export default function TabsLayout() {
         <Tabs
           screenOptions={{
             headerShown: false,
-            tabBarStyle: { display: 'none' } // Hides the default tabs if using custom BottomTabBar
+            tabBarStyle: { display: 'none' } // Hides the default tabs because we use our custom BottomTabBar
           }}>
           <Tabs.Screen name="nearby" />
-          <Tabs.Screen name="swipe" /> {/* This redirects to /archive */}
-          <Tabs.Screen name="chat" listeners={{ tabPress: () => { resetMatchCount(); } }} /> {/* This redirects to /chats */}
+          <Tabs.Screen name="swipe" /> 
+          <Tabs.Screen name="chat" listeners={{ tabPress: () => { resetMatchCount(); } }} /> 
           <Tabs.Screen name="profile" />
-          {/* Ensure 'explore.tsx' and 'index.tsx' (if it's the placeholder) exist in app/(tabs)/
-              or remove them from here if they are not meant to be actual tabs.
-              For now, let's assume they are valid tab screens.
+          {/* Ensure files like explore.tsx and index.tsx exist in app/(tabs)/ if they are listed here as screens, 
+              or remove them if they are not actual tabs.
+              For now, assuming 'explore' and 'index' are valid tab screens based on your previous structure.
           */}
-          <Tabs.Screen name="explore" />
-          <Tabs.Screen name="index" />
+          <Tabs.Screen name="explore" /> 
+          <Tabs.Screen name="index" />   
         </Tabs>
         <BottomTabBar />
       </View>
