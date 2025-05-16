@@ -359,6 +359,7 @@ export default function ProfileScreen() {
         bio: string | null;
         is_seller: boolean;
         is_buyer: boolean;
+        is_onboarded: boolean; // Ensure this is here
         updated_at: string;
         avatar_url?: string; // Make avatar_url optional
       } = {
@@ -366,6 +367,7 @@ export default function ProfileScreen() {
         bio: bio ? bio.trim() : null,
         is_seller: isSeller,
         is_buyer: isBuyer,
+        is_onboarded: false, // <<< EXPLICITLY SET TO FALSE HERE
         updated_at: new Date().toISOString()
       };
       
