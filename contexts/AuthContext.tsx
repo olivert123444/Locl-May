@@ -113,6 +113,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     log.info('Profile state changed', { 
       profileId: userProfile?.id, 
       isOnboarded: userProfile?.is_onboarded,
+      rawValue: userProfile?.is_onboarded, // Add this to see the raw value
+      typeOfIsOnboarded: typeof userProfile?.is_onboarded, // Add this for type
       hasLocation: !!userProfile?.location
     });
   }, [userProfile]);
@@ -225,6 +227,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Add diagnostic log for is_onboarded value and type
       if (profile) {
+        log.success('AuthContext: User profile fetched by fetchCurrentUser', {
+          userId: profile.id,
+          isOnboarded: profile.is_onboarded,
+          rawValue: profile.is_onboarded,
+          typeOfIsOnboarded: typeof profile.is_onboarded
+        });
         console.log('[AUTH] Fetched profile, is_onboarded:', profile.is_onboarded, typeof profile.is_onboarded);
       }
       

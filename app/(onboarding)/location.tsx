@@ -49,7 +49,8 @@ const log = {
 
 export default function LocationSetup() {
   const router = useRouter();
-  const { user, updateUserProfile, fetchCurrentUser, userProfile: authContextUserProfile } = useAuth();
+  const { user, updateUserProfile, fetchCurrentUser, userProfile: authContextUserProfileForLocation } = useAuth();
+  console.log('[ONBOARDING LOCATION SCREEN] Mounted. AuthContext userProfile.is_onboarded:', authContextUserProfileForLocation?.is_onboarded, 'Type:', typeof authContextUserProfileForLocation?.is_onboarded);
   const [location, setLocation] = useState('');
   const [zipCode, setZipCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -316,7 +317,7 @@ export default function LocationSetup() {
   };
 
   const handleContinue = async () => {
-    console.log('[ONBOARDING LOCATION - handleContinue START] AuthContext userProfile.is_onboarded:', authContextUserProfile?.is_onboarded);
+    console.log('[ONBOARDING LOCATION - handleContinue START] AuthContext userProfile.is_onboarded at start:', authContextUserProfileForLocation?.is_onboarded, 'Type:', typeof authContextUserProfileForLocation?.is_onboarded);
     if (!location || !zipCode) {
       setErrorMsg('Please enter your location and zip code');
       return;
@@ -362,6 +363,7 @@ export default function LocationSetup() {
       };
 
       // Save to database using our helper function
+      console.log('[ONBOARDING LOCATION - saveLocationToDatabase] DB WRITE: Preparing to write to users table. Intended is_onboarded: false');
       await saveLocationToDatabase(locationData);
       
       // Clear the timeout if it exists
@@ -372,7 +374,7 @@ export default function LocationSetup() {
       
       // Navigate to the next step in the onboarding flow (profile setup)
       console.log('Location saved successfully, proceeding to profile setup');
-      console.log('[ONBOARDING LOCATION - handleContinue END] AuthContext userProfile.is_onboarded:', authContextUserProfile?.is_onboarded);
+      console.log('[ONBOARDING LOCATION - handleContinue END] AuthContext userProfile.is_onboarded before navigating to profile:', authContextUserProfileForLocation?.is_onboarded, 'Type:', typeof authContextUserProfileForLocation?.is_onboarded);
       router.push('/(onboarding)/profile');
     } catch (error: any) {
       console.error('Error saving location:', error);
