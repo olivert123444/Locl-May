@@ -147,91 +147,76 @@ function RootLayoutNav() {
   
   // Determine onboarding status whenever user or userProfile changes
   useEffect(() => {
-    // Skip if we're still loading auth state
+    log.info('RootLayoutNav: [EFFECT on user, userProfile, loading] Determining init/onboarding state.');
     if (loading) {
+      log.info('RootLayoutNav: Still loading auth context, returning.');
+      // Keep isInitialized false until loading is definitively false
       return;
     }
-    
-    // If we have no user, they're not authenticated and not onboarded
+
     if (!user) {
-      log.info('No authenticated user');
+      log.info('RootLayoutNav: No user, setting not onboarded, initialized.');
       setIsOnboarded(false);
       setIsInitialized(true);
       return;
     }
-    
-    // If we have userProfile, use it to determine onboarding status
+
+    // User exists
     if (userProfile) {
-      // More flexible onboarding status check that handles different data types
-      // This will treat any truthy value (true, 1, '1', 'true') as true
       const onboardingStatus = Boolean(userProfile.is_onboarded);
-      log.info('Determined onboarding status from user profile', { 
-        userId: userProfile.id, 
+      log.info('RootLayoutNav: User and profile exist. Setting onboarding from profile.', {
+        userId: userProfile.id,
         isOnboarded: onboardingStatus,
         rawValue: userProfile.is_onboarded,
-        valueType: typeof userProfile.is_onboarded
       });
       setIsOnboarded(onboardingStatus);
       setIsInitialized(true);
-      return;
-    }
-    
-    // If we have user but no profile, fetch the profile
-    if (user && !userProfile && !loading) {
-      log.info('User exists but no profile, fetching profile data', { userId: user.id });
-      fetchCurrentUser().then((profile) => {
-        if (profile) {
-          log.success('User profile fetched successfully', {
-            userId: profile.id,
-            isOnboarded: Boolean(profile.is_onboarded),
-            rawValue: profile.is_onboarded,
-            valueType: typeof profile.is_onboarded
+    } else {
+      // User exists, but no profile yet. AuthContext's onAuthStateChange
+      // should have already called fetchCurrentUser. If we reach here,
+      // it means fetchCurrentUser in AuthContext might not have set userProfile yet or failed.
+      // Let's rely on AuthContext to eventually provide userProfile.
+      // For now, if no profile, assume not initialized for navigation purposes.
+      log.warn('RootLayoutNav: User exists, but userProfile is null. Waiting for AuthContext to provide profile. isInitialized remains false.');
+      // setIsInitialized(false); // Explicitly ensure we wait if profile isn't ready
+      // To avoid loops, we might NOT fetch here again, but ensure AuthContext robustly provides it.
+      // However, your original logic did fetch here, let's try a controlled fetch:
+      if (!isInitialized) { // Only fetch if not yet initialized by this path
+          log.info('RootLayoutNav: User exists, no profile, and not initialized here. Fetching...');
+          fetchCurrentUser().then(profile => {
+              if (profile) {
+                  const onboardingStatus = Boolean(profile.is_onboarded);
+                  log.success('RootLayoutNav: Profile fetched. Setting onboarding.', { isOnboarded: onboardingStatus });
+                  setIsOnboarded(onboardingStatus);
+              } else {
+                  log.warn('RootLayoutNav: Profile fetch returned null. Setting not onboarded.');
+                  setIsOnboarded(false);
+              }
+              setIsInitialized(true); // Initialize after fetch attempt
+          }).catch(err => {
+              log.error('RootLayoutNav: Error fetching profile in effect. Setting not onboarded.', err);
+              setIsOnboarded(false);
+              setIsInitialized(true);
           });
-        } else {
-          log.warn('User profile fetch returned no profile');
-          // Default to not onboarded if no profile
-          setIsOnboarded(false);
-          setIsInitialized(true);
-        }
-      }).catch(error => {
-        log.error('Failed to fetch user profile', error);
-        // Default to not onboarded on error
-        setIsOnboarded(false);
-        setIsInitialized(true);
-      });
+      }
     }
-  }, [user, userProfile, loading, fetchCurrentUser]);
+  }, [user, userProfile, loading, fetchCurrentUser, isInitialized]); // Added isInitialized to prevent re-fetch if already done
   
-  // Update onboarding status when userProfile changes
-  useEffect(() => {
-    if (!loading && userProfile) {
-      const onboardingStatus = Boolean(userProfile.is_onboarded);
-      log.info('User profile updated, updating onboarding status', { 
-        isOnboarded: onboardingStatus 
-      });
-      setIsOnboarded(onboardingStatus);
-      setIsInitialized(true);
-    }
-  }, [userProfile, loading]);
-
-  // Update current path whenever segments change and refresh onboarding status when needed
+  // Update current path whenever segments change (but don't refresh profile)
   useEffect(() => {
     const newPath = segments.join('/');
     const previousPath = currentPathRef.current;
     currentPathRef.current = newPath;
     
-    // If we're navigating from onboarding to root, refresh the user profile
-    // This ensures we have the latest onboarding status after completing the flow
+    // Just track path changes, but don't trigger profile refresh
     if (user && 
         previousPath.startsWith('(onboarding)') && 
         (newPath === '' || newPath === '(tabs)') && 
         isInitialized) {
-      log.info('Detected navigation from onboarding to main app, refreshing user profile');
-      fetchCurrentUser().catch(error => {
-        log.error('Failed to refresh user profile after onboarding', error);
-      });
+      log.info('Detected navigation from onboarding to main app (no longer triggering profile refresh)');
+      // Removed fetchCurrentUser call that was likely causing issues
     }
-  }, [segments, user, isInitialized, fetchCurrentUser]);
+  }, [segments, user, isInitialized]);
 
   // Handle navigation based on auth state
   useEffect(() => {
