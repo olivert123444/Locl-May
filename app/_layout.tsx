@@ -235,43 +235,50 @@ function RootLayoutNav() {
 
   // Handle navigation based on auth state
   useEffect(() => {
-    // Don't redirect if we're still loading or don't have onboarding status yet
     if (!isInitialized || loading || isOnboarded === null) {
+      log.info('RootLayoutNav: Skipping navigation (initializing, loading, or isOnboarded not determined yet)');
       return;
     }
-    
-    // Get the current path
-    const currentPath = currentPathRef.current;
-    
-    log.info('Navigation check', { 
-      user: !!user, 
-      isOnboarded, 
-      currentPath
-    });
-    
-    // Simple navigation logic based on user and onboarding status
+
+    const currentPath = segments.join('/');
+    // Convert an empty path (root) to something distinct for logging if needed, or handle it directly.
+    const effectiveCurrentPath = currentPath === '' ? '/' : currentPath;
+
+    log.info('RootLayoutNav: Navigation check', { user: !!user, isOnboarded, currentPath: effectiveCurrentPath, segments });
+
+    const isInAuthGroup = effectiveCurrentPath.startsWith('/(auth)'); // Added leading / for clarity
+    const isInOnboardingGroup = effectiveCurrentPath.startsWith('/(onboarding)');
+    const isInTabsGroup = effectiveCurrentPath.startsWith('/(tabs)');
+
     if (!user) {
-      // Redirect to login if not already there
-      if (!currentPath.startsWith('(auth)')) {
+      if (!isInAuthGroup) {
         log.info('RootLayoutNav: No user, redirecting to (auth)/login');
         router.replace('/(auth)/login');
       }
     } else { // User exists
       if (isOnboarded === false) {
-        // User is authenticated but not onboarded
-        if (!currentPath.startsWith('(onboarding)')) {
-          log.info('RootLayoutNav: User authenticated but not onboarded, redirecting to (onboarding)/index');
-          router.replace('/(onboarding)/index'); // Always start at (onboarding)/index
+        // If user is not onboarded, and they are NOT already in an onboarding path,
+        // OR if they somehow landed on +not-found or the very root after login, send to onboarding.
+        if (!isInOnboardingGroup || effectiveCurrentPath === '/+not-found' || effectiveCurrentPath === '/') {
+          log.info(`RootLayoutNav: User not onboarded. Current: "${effectiveCurrentPath}". Redirecting to (onboarding)/index`);
+          router.replace('/(onboarding)/index');
+        } else {
+          log.info(`RootLayoutNav: User not onboarded, but already in onboarding. Current: "${effectiveCurrentPath}"`);
         }
       } else if (isOnboarded === true) {
-        // User is authenticated and onboarded
-        if (currentPath.startsWith('(auth)') || currentPath.startsWith('(onboarding)')) {
-          log.info('RootLayoutNav: User authenticated and onboarded, redirecting to /(app)');
-          router.replace('/(app)'); // Navigate to the (app) group's layout
+        // User is onboarded.
+        // If they are coming from auth/onboarding, or are at root, or +not-found, send to tabs.
+        if (isInAuthGroup || isInOnboardingGroup || effectiveCurrentPath === '/' || effectiveCurrentPath === '/+not-found') {
+          log.info(`RootLayoutNav: User onboarded. Current: "${effectiveCurrentPath}". Redirecting to default tab /(tabs)/nearby`);
+          router.replace('/(tabs)/nearby');
+        } else if (!isInTabsGroup && !effectiveCurrentPath.startsWith('/_sitemap')) {
+          // If onboarded but on a weird path that isn't tabs, auth, or onboarding, redirect to tabs.
+          log.warn(`RootLayoutNav: User onboarded but on unexpected path "${effectiveCurrentPath}". Redirecting to /(tabs)/nearby.`);
+          router.replace('/(tabs)/nearby');
         }
       }
     }
-  }, [user, loading, isOnboarded, isInitialized, segments]);
+  }, [user, loading, isOnboarded, isInitialized, segments, router]);
 
   // Show loading indicator while initializing
   if (loading || !isInitialized) {
