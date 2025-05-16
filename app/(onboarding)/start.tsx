@@ -9,7 +9,7 @@ import { getCurrentLocation } from '@/lib/locationService';
 
 export default function OnboardingStart() {
   const router = useRouter();
-  const { user, userProfile: authContextUserProfileForIndex } = useAuth();
+  const { user, userProfile: authContextUserProfileForIndex, fetchCurrentUser: fetchCurrentUserFromAuth } = useAuth();
   console.log('[ONBOARDING START SCREEN] Mounted. AuthContext userProfile.is_onboarded:', authContextUserProfileForIndex?.is_onboarded);
   const [isLoading, setIsLoading] = useState(false);
   const [checkingLocation, setCheckingLocation] = useState(false);
@@ -189,9 +189,21 @@ export default function OnboardingStart() {
         }
         
         if (result.error) {
-          console.error('Error saving location data:', result.error);
+          console.error('[ONBOARDING START] Error saving location/user data to DB:', result.error);
           throw new Error(`Database error: ${result.error.message}`);
         }
+
+        console.log('[ONBOARDING START] DB operation successful. Data returned from DB write (if any):', result.data);
+
+        // Explicitly re-fetch the profile via AuthContext to see its state NOW
+        if (fetchCurrentUserFromAuth) { // Assuming fetchCurrentUser is available via useAuth()
+            console.log('[ONBOARDING START] Explicitly calling fetchCurrentUser from AuthContext AFTER DB write...');
+            const freshProfileFromAuth = await fetchCurrentUserFromAuth();
+            console.log('[ONBOARDING START] Profile from AuthContext AFTER explicit fetchCurrentUser:', freshProfileFromAuth);
+            console.log('[ONBOARDING START] AuthContext userProfile.is_onboarded AFTER explicit fetchCurrentUser:', authContextUserProfileForIndex?.is_onboarded); // authContextUserProfileForStart should be from useAuth() at top of component
+        }
+
+        console.log('[ONBOARDING START] About to navigate to profile. AuthContext userProfile.is_onboarded at this exact moment:', authContextUserProfileForIndex?.is_onboarded);
         
         // Skip location page and go directly to profile setup
         console.log('Location saved successfully, proceeding to profile setup');
