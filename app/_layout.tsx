@@ -228,7 +228,7 @@ function RootLayoutNav() {
     } else { // User exists
       if (isOnboarded === false) {
         if (!currentPath.startsWith('/(onboarding)') || currentPath === '/+not-found' || currentPath === '/') {
-          targetPath = '/(onboarding)/index'; // Changed back to index for testing with normalized paths
+          targetPath = '/(onboarding)/start'; // Using start.tsx as the entry point for onboarding
           log.info(`RootLayoutNav: User not onboarded. Current: "${currentPath}". Setting target: "${targetPath}"`);
         } else {
           // This else block means user is !isOnboarded AND currentPath DOES start with '/(onboarding)'
