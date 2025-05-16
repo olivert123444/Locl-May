@@ -201,65 +201,58 @@ function RootLayoutNav() {
 
   // Handle navigation based on auth state
   useEffect(() => {
-    // 1. Initial skip condition
     if (!isInitialized || loading || isOnboarded === null) {
       log.info('RootLayoutNav: Skipping navigation (initializing, loading, or isOnboarded not determined yet)');
       return;
     }
 
-    const currentSegments = segments; // Use a stable variable for the current render
-    const currentPath = currentSegments.join('/') || '/'; // Default to '/' if segments is empty
+    const currentSegments = segments;
+    // Ensure currentPath always starts with a slash if it's not just an empty root,
+    // or treat empty segments as '/'
+    let currentPath = currentSegments.join('/');
+    if (currentSegments.length > 0 && !currentPath.startsWith('/')) {
+      currentPath = '/' + currentPath;
+    } else if (currentSegments.length === 0) {
+      currentPath = '/';
+    }
+
     log.info('RootLayoutNav: Navigation check', { user: !!user, isOnboarded, currentPath, segments: currentSegments });
 
-    let targetPath: string | null = null;
+    let targetPath: string | null = null; // Always use leading slash for target paths
 
     if (!user) {
-      // If no user, and not already in auth flow, go to login
       if (!currentPath.startsWith('/(auth)')) {
         targetPath = '/(auth)/login';
         log.info(`RootLayoutNav: No user. Current: "${currentPath}". Setting target: "${targetPath}"`);
       }
     } else { // User exists
       if (isOnboarded === false) {
-        // If user is not onboarded:
-        // - and not already in an onboarding path, OR
-        // - is somehow on +not-found, OR
-        // - is at the root path
-        // THEN target onboarding. (Still using /location as the temporary debug target)
         if (!currentPath.startsWith('/(onboarding)') || currentPath === '/+not-found' || currentPath === '/') {
-          targetPath = '/(onboarding)/start'; // Changed to start.tsx for testing the ultra-simple screen
+          targetPath = '/(onboarding)/start'; // Our current debug target
           log.info(`RootLayoutNav: User not onboarded. Current: "${currentPath}". Setting target: "${targetPath}"`);
+        } else {
+          // This else block means user is !isOnboarded AND currentPath DOES start with '/(onboarding)'
+          // AND currentPath is NOT '/+not-found' AND currentPath is NOT '/'
+          // In this case, targetPath remains null, so no navigation should happen.
+          log.info(`RootLayoutNav: User not onboarded, already in onboarding path "${currentPath}". No redirect needed from here.`);
+          // targetPath remains null
         }
       } else if (isOnboarded === true) {
-        // If user IS onboarded:
-        // - and currently in auth, onboarding, at root, or +not-found
-        // THEN target the main app (tabs).
         if (currentPath.startsWith('/(auth)') || currentPath.startsWith('/(onboarding)') || currentPath === '/' || currentPath === '/+not-found') {
-          targetPath = '/(tabs)/nearby'; // Default screen in main app
+          targetPath = '/(tabs)/nearby';
           log.info(`RootLayoutNav: User onboarded. Current: "${currentPath}". Setting target: "${targetPath}"`);
         }
-        // Optional: Catch-all for onboarded users on weird paths (can be added later if needed)
-        // else if (!currentPath.startsWith('/(tabs)') && !currentPath.startsWith('/chat') /* add other valid app paths */ && !currentPath.startsWith('/_sitemap')) {
-        //   targetPath = '/(tabs)/nearby';
-        //   log.warn(`RootLayoutNav: User onboarded on unexpected path. Current: "${currentPath}". Setting target: "${targetPath}"`);
-        // }
       }
     }
 
-    // --- This is the key change to prevent loops ---
-    // Only navigate if a targetPath is determined AND we are not already effectively at that targetPath.
     if (targetPath && currentPath !== targetPath) {
-      // Check if currentPath is essentially the same as targetPath if one is an index route
-      // e.g. if targetPath is '/(onboarding)/location' and currentPath is '/(onboarding)/location/index'
-      // For simplicity now, we'll do a direct comparison. This can be refined if index routes are an issue.
       log.info(`RootLayoutNav: Executing router.replace to "${targetPath}" (from "${currentPath}")`);
       router.replace(targetPath);
     } else if (targetPath && currentPath === targetPath) {
-      log.info(`RootLayoutNav: Already at target path "${targetPath}". No navigation needed.`);
+      log.info(`RootLayoutNav: Already at target path "${targetPath}". No navigation needed.`); // This should ideally hit
     } else {
       log.info(`RootLayoutNav: No navigation target determined for current state, or already at a stable path. CurrentPath: "${currentPath}", IsOnboarded: ${isOnboarded}, User: ${!!user}`);
     }
-
   }, [user, loading, isOnboarded, isInitialized, segments, router]);
 
   // Show loading indicator while initializing
