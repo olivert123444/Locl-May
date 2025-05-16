@@ -99,6 +99,7 @@ function RootLayoutNav() {
     // Set a timeout to ensure we don't get stuck in loading state
     const initTimeout = setTimeout(() => {
       if (!isInitialized) {
+        console.log('[NAV] !!!!! INIT TIMEOUT FIRING NOW !!!!!'); // New log
         log.warn('Initialization timeout detected');
         
         // Before defaulting to not onboarded, let's check localStorage for any cached onboarding info
@@ -139,7 +140,7 @@ function RootLayoutNav() {
         // Mark initialization as complete regardless
         setIsInitialized(true);
       }
-    }, 8000); // Increase timeout to 8 seconds to give a bit more time
+    }, 15000); // Increased to 15 seconds to give more time for Supabase auth and profile fetch
     
     return () => clearTimeout(initTimeout);
   }, [isInitialized, user, userProfile, fetchCurrentUser]);
