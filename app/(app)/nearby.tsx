@@ -20,6 +20,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { getNearbyListings, createOffer } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
+import ProductDetailModal from '@/components/ProductDetailModal';
 
 const { width, height } = Dimensions.get('window');
 
@@ -30,7 +31,8 @@ interface Product {
   price: number;
   distance: number;
   formattedDistance?: string; // Add formatted distance for display
-  image: string;
+  image: string; // Keep for backward compatibility
+  images: string[]; // Array of image URLs
   seller: string;
   seller_id: string;
   description: string;
@@ -38,6 +40,13 @@ interface Product {
     latitude: number;
     longitude: number;
     address?: string;
+    city?: string;
+  };
+  details?: { // Optional structured details
+    brand?: string;
+    size?: string;
+    color?: string;
+    condition?: string;
   };
 }
 
@@ -118,6 +127,10 @@ export default function NearbyScreen() {
   const animatedValue = useRef(new Animated.Value(0)).current;
   const sliderPosition = useRef(new Animated.Value(0)).current;
   
+  // State for ProductDetailModal
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedProductForModal, setSelectedProductForModal] = useState<Product | null>(null);
+  
   // Fetch listings based on search distance
   const fetchListings = useCallback(async (distance?: number) => {
     if (!user) return;
@@ -139,10 +152,15 @@ export default function NearbyScreen() {
         distance: listing.distance || 0,
         formattedDistance: listing.formattedDistance || `${(listing.distance || 0).toFixed(1)} km`,
         image: listing.main_image_url || 'https://images.unsplash.com/photo-1627843563095-f6e94676cfe0',
+        // Handle images array, with fallback
+        images: listing.images && listing.images.length > 0 
+          ? listing.images 
+          : [listing.main_image_url || 'https://images.unsplash.com/photo-1627843563095-f6e94676cfe0'],
         seller: listing.seller,
         seller_id: listing.seller_id || '',
         description: listing.description || '',
-        location: listing.location
+        location: listing.location,
+        details: listing.details || {}, // Include structured details
       }));
       
       console.log(`Found ${formattedProducts.length} nearby listings`);
@@ -236,6 +254,19 @@ const RadiusSlider = ({ radius, setRadius, onRadiusChange }: {
     setOfferModalVisible(true);
   };
 
+  const handleOfferPress = (product: Product) => {
+    setCurrentProduct(product);
+    setOfferModalVisible(true);
+    setOfferAmount(product.price.toString()); // Default to product price
+  };
+
+  // Function to open product detail modal
+  const openProductModal = (product: Product) => {
+    console.log('Opening modal for product:', product.id);
+    setSelectedProductForModal(product);
+    setModalVisible(true);
+  };
+
   const handleSwipeLeft = (cardIndex: number) => {
     // Use real products if available, otherwise fall back to sample products
     const productsToUse = products.length > 0 ? products : emptyProducts;
@@ -321,6 +352,13 @@ const RadiusSlider = ({ radius, setRadius, onRadiusChange }: {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
+      
+      {/* Product Detail Modal */}
+      <ProductDetailModal
+        visible={modalVisible}
+        product={selectedProductForModal}
+        onClose={() => setModalVisible(false)}
+      />
       
       {/* Debug Overlay removed */}
       
@@ -424,7 +462,10 @@ const RadiusSlider = ({ radius, setRadius, onRadiusChange }: {
             ref={swiperRef}
             cards={products.length > 0 ? products : emptyProducts}
             renderCard={(product) => (
-            <View style={styles.card}>
+            <TouchableOpacity 
+              style={styles.card}
+              onPress={() => openProductModal(product)}
+            >
               <Image
                 source={{ uri: product.image }}
                 style={styles.cardImage}
@@ -448,8 +489,8 @@ const RadiusSlider = ({ radius, setRadius, onRadiusChange }: {
                   </View>
                 </View>
               </View>
-            </View>
-          )}
+            </TouchableOpacity>
+          )} 
           onSwipedRight={handleSwipeRight}
           onSwipedLeft={handleSwipeLeft}
           backgroundColor={'transparent'}
