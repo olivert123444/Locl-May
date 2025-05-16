@@ -260,8 +260,8 @@ function RootLayoutNav() {
         // If user is not onboarded, and they are NOT already in an onboarding path,
         // OR if they somehow landed on +not-found or the very root after login, send to onboarding.
         if (!isInOnboardingGroup || effectiveCurrentPath === '/+not-found' || effectiveCurrentPath === '/') {
-          log.info(`RootLayoutNav: User not onboarded. Current: "${effectiveCurrentPath}". Redirecting to (onboarding)/index`);
-          router.replace('/(onboarding)/index');
+          log.info(`RootLayoutNav: User not onboarded. Current: "${effectiveCurrentPath}". TEMP DEBUG: Redirecting to (onboarding)/location`);
+          router.replace('/(onboarding)/location'); // <<< TEMPORARY CHANGE
         } else {
           log.info(`RootLayoutNav: User not onboarded, but already in onboarding. Current: "${effectiveCurrentPath}"`);
         }
