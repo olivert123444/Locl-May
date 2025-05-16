@@ -227,7 +227,7 @@ function RootLayoutNav() {
         // - is at the root path
         // THEN target onboarding. (Still using /location as the temporary debug target)
         if (!currentPath.startsWith('/(onboarding)') || currentPath === '/+not-found' || currentPath === '/') {
-          targetPath = '/(onboarding)/index'; // Changed back to index for testing the ultra-simple screen
+          targetPath = '/(onboarding)/start'; // Changed to start.tsx for testing the ultra-simple screen
           log.info(`RootLayoutNav: User not onboarded. Current: "${currentPath}". Setting target: "${targetPath}"`);
         }
       } else if (isOnboarded === true) {
