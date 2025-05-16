@@ -139,7 +139,7 @@ export default function PermissionsSetup() {
       
       // Navigate to a neutral or main app route
       // RootLayoutNav will then see isOnboarded = true and allow access
-      router.replace('/(app)');
+      router.replace('/(tabs)/nearby');
     } catch (err) {
       console.error('Error completing onboarding:', err);
       setError('Failed to complete setup. Please try again.');
