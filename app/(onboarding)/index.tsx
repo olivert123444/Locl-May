@@ -8,7 +8,7 @@ import { getCurrentLocation } from '@/lib/locationService';
 
 export default function OnboardingStart() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, userProfile: authContextUserProfile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [checkingLocation, setCheckingLocation] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -98,6 +98,7 @@ export default function OnboardingStart() {
   
   // Function to automatically save location and proceed to profile page
   const autoSaveLocationAndProceed = async () => {
+    console.log('[ONBOARDING INDEX - autoSaveLocationAndProceed START] AuthContext userProfile.is_onboarded:', authContextUserProfile?.is_onboarded);
     if (!user) return;
     
     setIsLoading(true);
@@ -192,6 +193,7 @@ export default function OnboardingStart() {
         
         // Skip location page and go directly to profile setup
         console.log('Location saved successfully, proceeding to profile setup');
+        console.log('[ONBOARDING INDEX - autoSaveLocationAndProceed END] AuthContext userProfile.is_onboarded:', authContextUserProfile?.is_onboarded);
         router.push('/(onboarding)/profile');
         return;
       } else {

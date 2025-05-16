@@ -49,7 +49,7 @@ const log = {
 
 export default function LocationSetup() {
   const router = useRouter();
-  const { user, updateUserProfile, fetchCurrentUser } = useAuth();
+  const { user, updateUserProfile, fetchCurrentUser, userProfile: authContextUserProfile } = useAuth();
   const [location, setLocation] = useState('');
   const [zipCode, setZipCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -316,6 +316,7 @@ export default function LocationSetup() {
   };
 
   const handleContinue = async () => {
+    console.log('[ONBOARDING LOCATION - handleContinue START] AuthContext userProfile.is_onboarded:', authContextUserProfile?.is_onboarded);
     if (!location || !zipCode) {
       setErrorMsg('Please enter your location and zip code');
       return;
@@ -371,6 +372,7 @@ export default function LocationSetup() {
       
       // Navigate to the next step in the onboarding flow (profile setup)
       console.log('Location saved successfully, proceeding to profile setup');
+      console.log('[ONBOARDING LOCATION - handleContinue END] AuthContext userProfile.is_onboarded:', authContextUserProfile?.is_onboarded);
       router.push('/(onboarding)/profile');
     } catch (error: any) {
       console.error('Error saving location:', error);

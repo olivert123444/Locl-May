@@ -209,7 +209,7 @@ const runDiagnosticTests = async (user: any, log: any) => {
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, updateUserProfile, fetchCurrentUser } = useAuth();
+  const { user, updateUserProfile, fetchCurrentUser, userProfile: authContextUserProfile } = useAuth();
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [isSeller, setIsSeller] = useState(true);
@@ -294,6 +294,7 @@ export default function ProfileScreen() {
 
   const handleSubmit = async () => {
     console.log('SUBMIT BUTTON PRESSED - handleSubmit function called');
+    console.log('[ONBOARDING PROFILE - handleSubmit START] AuthContext userProfile.is_onboarded:', authContextUserProfile?.is_onboarded);
     log.info('Profile submission initiated');
     
     // Validate form data
@@ -401,6 +402,7 @@ export default function ProfileScreen() {
       
       // Step 5: Navigate to permissions screen (next step in onboarding)
       console.log('DIRECT UPDATE: Navigation to permissions screen');
+      console.log('[ONBOARDING PROFILE - handleSubmit END] AuthContext userProfile.is_onboarded:', authContextUserProfile?.is_onboarded);
       setIsLoading(false);
       router.push('/(onboarding)/permissions');
       
