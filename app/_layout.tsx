@@ -149,13 +149,15 @@ function RootLayoutNav() {
   useEffect(() => {
     log.info('RootLayoutNav: [EFFECT on user, userProfile, loading] Determining init/onboarding state.');
     if (loading) {
-      log.info('RootLayoutNav: Still loading auth context, returning.');
-      // Keep isInitialized false until loading is definitively false
+      log.info('RootLayoutNav: AuthContext is loading. isInitialized = false.');
+      setIsInitialized(false); // Stay uninitialized while AuthContext loads
       return;
     }
 
+    // AuthContext loading is false from this point
+
     if (!user) {
-      log.info('RootLayoutNav: No user, setting not onboarded, initialized.');
+      log.info('RootLayoutNav: No user from AuthContext. Setting not onboarded, initialized.');
       setIsOnboarded(false);
       setIsInitialized(true);
       return;
@@ -164,7 +166,7 @@ function RootLayoutNav() {
     // User exists
     if (userProfile) {
       const onboardingStatus = Boolean(userProfile.is_onboarded);
-      log.info('RootLayoutNav: User and profile exist. Setting onboarding from profile.', {
+      log.info('RootLayoutNav: User and profile exist from AuthContext. Setting onboarding from profile.', {
         userId: userProfile.id,
         isOnboarded: onboardingStatus,
         rawValue: userProfile.is_onboarded,
@@ -172,35 +174,14 @@ function RootLayoutNav() {
       setIsOnboarded(onboardingStatus);
       setIsInitialized(true);
     } else {
-      // User exists, but no profile yet. AuthContext's onAuthStateChange
-      // should have already called fetchCurrentUser. If we reach here,
-      // it means fetchCurrentUser in AuthContext might not have set userProfile yet or failed.
-      // Let's rely on AuthContext to eventually provide userProfile.
-      // For now, if no profile, assume not initialized for navigation purposes.
-      log.warn('RootLayoutNav: User exists, but userProfile is null. Waiting for AuthContext to provide profile. isInitialized remains false.');
-      // setIsInitialized(false); // Explicitly ensure we wait if profile isn't ready
-      // To avoid loops, we might NOT fetch here again, but ensure AuthContext robustly provides it.
-      // However, your original logic did fetch here, let's try a controlled fetch:
-      if (!isInitialized) { // Only fetch if not yet initialized by this path
-          log.info('RootLayoutNav: User exists, no profile, and not initialized here. Fetching...');
-          fetchCurrentUser().then(profile => {
-              if (profile) {
-                  const onboardingStatus = Boolean(profile.is_onboarded);
-                  log.success('RootLayoutNav: Profile fetched. Setting onboarding.', { isOnboarded: onboardingStatus });
-                  setIsOnboarded(onboardingStatus);
-              } else {
-                  log.warn('RootLayoutNav: Profile fetch returned null. Setting not onboarded.');
-                  setIsOnboarded(false);
-              }
-              setIsInitialized(true); // Initialize after fetch attempt
-          }).catch(err => {
-              log.error('RootLayoutNav: Error fetching profile in effect. Setting not onboarded.', err);
-              setIsOnboarded(false);
-              setIsInitialized(true);
-          });
-      }
+      // User exists, but userProfile is null from AuthContext.
+      // This means AuthContext's fetchCurrentUser either failed or hasn't completed setting userProfile.
+      // We should wait for AuthContext to provide it.
+      // If this state persists, it indicates an issue in AuthContext's fetchCurrentUser or its state updates.
+      log.warn('RootLayoutNav: User exists, but userProfile is NULL from AuthContext. isInitialized remains false. AuthContext should provide this.');
+      setIsInitialized(false); // Explicitly wait for userProfile from context
     }
-  }, [user, userProfile, loading, fetchCurrentUser, isInitialized]); // Added isInitialized to prevent re-fetch if already done
+  }, [user, userProfile, loading]); // Removed fetchCurrentUser and isInitialized from deps
   
   // Update current path whenever segments change (but don't refresh profile)
   useEffect(() => {
