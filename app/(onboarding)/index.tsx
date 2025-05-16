@@ -158,7 +158,7 @@ export default function OnboardingStart() {
               location: formattedLocation,
               is_seller: false,
               is_buyer: true,
-              // Set is_onboarded to false until profile is completed
+              // Explicitly set is_onboarded to false until onboarding is fully completed
               is_onboarded: false,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
@@ -170,9 +170,10 @@ export default function OnboardingStart() {
           // Log the existing user data to verify what fields we have
           console.log('Existing user data before update:', existingUser);
           
-          // Only update the location and timestamp, preserving all other fields
+          // Only update the location and timestamp, and explicitly set is_onboarded to false
           const updateData = {
             location: formattedLocation,
+            is_onboarded: false, // Explicitly set to false to ensure consistency
             updated_at: new Date().toISOString(),
           };
           

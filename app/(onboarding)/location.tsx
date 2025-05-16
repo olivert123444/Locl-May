@@ -149,48 +149,11 @@ export default function LocationSetup() {
             log.info('Auto-saving location data to database');
             await saveLocationToDatabase(autoLocationData);
             
-            // STEP 5: Mark the user as onboarded
+            // Proceed to profile setup instead of marking as onboarded here
             if (user) {
-              log.info('Auto-proceed: Marking user as onboarded after successful location setup');
-              try {
-                // Update the is_onboarded flag using the global context function
-                log.info('Updating user profile with is_onboarded=true');
-                const updatedProfile = await updateUserProfile({ is_onboarded: true });
-                
-                if (!updatedProfile) {
-                  log.error('Auto-proceed: Error marking user as onboarded - no profile returned');
-                } else {
-                  log.success('Auto-proceed: Successfully marked user as onboarded', {
-                    userId: updatedProfile.id,
-                    isOnboarded: updatedProfile.is_onboarded
-                  });
-                  
-                  // STEP 6: Fetch the latest user data to ensure we have the most up-to-date state
-                  log.info('Auto-proceed: Fetching latest user data to confirm onboarding status');
-                  const freshProfile = await fetchCurrentUser();
-                  
-                  if (freshProfile) {
-                    log.info('Auto-proceed: Received fresh user profile data', {
-                      userId: freshProfile.id,
-                      isOnboarded: freshProfile.is_onboarded
-                    });
-                    
-                    if (freshProfile.is_onboarded !== true) {
-                      log.warn('Auto-proceed: Warning: User still not marked as onboarded in fresh data');
-                    } else {
-                      log.success('Auto-proceed: Confirmed user is marked as onboarded');
-                    }
-                  } else {
-                    log.warn('Auto-proceed: Could not fetch fresh profile data');
-                  }
-                }
-                
-                // Immediately proceed to the main app
-                console.log('Auto-proceed: Location setup complete, redirecting to main app');
-                router.replace('/(tabs)/nearby');
-              } catch (error) {
-                console.error('Auto-proceed: Error updating onboarding status:', error);
-              }
+              log.info('Auto-proceed: Location saved successfully, proceeding to profile setup');
+              // Navigate to the profile setup screen (next step in onboarding flow)
+              router.push('/(onboarding)/profile');
             } else {
               console.error('Auto-proceed: No authenticated user found');
             }
@@ -310,7 +273,7 @@ export default function LocationSetup() {
           location: formattedLocation,
           is_seller: false,
           is_buyer: true,
-          // Explicitly set is_onboarded to false (as boolean) - will be set to true after profile setup
+          // Explicitly set is_onboarded to false (as boolean) - will be set to true only after permissions step
           is_onboarded: false,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -329,12 +292,9 @@ export default function LocationSetup() {
         updated_at: new Date().toISOString(),
       };
       
-      // Only modify is_onboarded if it's not already set to true
-      // This ensures we don't reset onboarding progress if the user is updating their location later
-      const existingOnboarded = existingUser?.is_onboarded === true || existingUser?.is_onboarded === 'true';
-      if (!existingOnboarded) {
-        updateData.is_onboarded = false; // Use boolean false, not string
-      }
+      // Always explicitly set is_onboarded to false during the location step
+      // This ensures consistency in the onboarding flow
+      updateData.is_onboarded = false; // Use boolean false, not string
       
       console.log('Updating user with data:', updateData);
       

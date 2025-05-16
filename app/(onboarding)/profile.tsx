@@ -328,7 +328,7 @@ export default function ProfileScreen() {
         bio: bio ? bio.trim() : null,
         is_seller: isSeller,
         is_buyer: isBuyer,
-        is_onboarded: true,
+        // is_onboarded will be set to true only in the permissions screen
         updated_at: new Date().toISOString()
       };
       

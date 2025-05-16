@@ -223,6 +223,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // This ensures we don't have a state where user exists but profile doesn't
       const profile = await fetchUserProfile(session.user);
       
+      // Add diagnostic log for is_onboarded value and type
+      if (profile) {
+        console.log('[AUTH] Fetched profile, is_onboarded:', profile.is_onboarded, typeof profile.is_onboarded);
+      }
+      
       // Only if we have a profile, we create a complete user object with profile
       if (profile) {
         const completeUser: User = {
