@@ -8,7 +8,8 @@ import { getCurrentLocation } from '@/lib/locationService';
 
 export default function OnboardingStart() {
   const router = useRouter();
-  const { user, userProfile: authContextUserProfile } = useAuth();
+  const { user, userProfile: authContextUserProfileForIndex } = useAuth();
+  console.log('[ONBOARDING INDEX SCREEN] Mounted. AuthContext userProfile.is_onboarded:', authContextUserProfileForIndex?.is_onboarded);
   const [isLoading, setIsLoading] = useState(false);
   const [checkingLocation, setCheckingLocation] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -98,7 +99,7 @@ export default function OnboardingStart() {
   
   // Function to automatically save location and proceed to profile page
   const autoSaveLocationAndProceed = async () => {
-    console.log('[ONBOARDING INDEX - autoSaveLocationAndProceed START] AuthContext userProfile.is_onboarded:', authContextUserProfile?.is_onboarded);
+    console.log('[ONBOARDING INDEX - autoSaveLocationAndProceed START] AuthContext userProfile.is_onboarded at start:', authContextUserProfileForIndex?.is_onboarded);
     if (!user) return;
     
     setIsLoading(true);
@@ -150,6 +151,7 @@ export default function OnboardingStart() {
         if (!existingUser && (!fetchError || fetchError.code === 'PGRST116')) {
           // User doesn't exist yet, create a new user record
           console.log('Creating new user record with location data');
+          console.log('[ONBOARDING INDEX - autoSaveLocationAndProceed] DB WRITE: Setting is_onboarded to false.');
           result = await supabase
             .from('users')
             .insert({
@@ -179,6 +181,7 @@ export default function OnboardingStart() {
           };
           
           console.log('Updating only location data:', updateData);
+          console.log('[ONBOARDING INDEX - autoSaveLocationAndProceed] DB WRITE: Setting is_onboarded to false.');
           
           result = await supabase
             .from('users')
@@ -193,7 +196,7 @@ export default function OnboardingStart() {
         
         // Skip location page and go directly to profile setup
         console.log('Location saved successfully, proceeding to profile setup');
-        console.log('[ONBOARDING INDEX - autoSaveLocationAndProceed END] AuthContext userProfile.is_onboarded:', authContextUserProfile?.is_onboarded);
+        console.log('[ONBOARDING INDEX - autoSaveLocationAndProceed END] AuthContext userProfile.is_onboarded before navigating to profile:', authContextUserProfileForIndex?.is_onboarded);
         router.push('/(onboarding)/profile');
         return;
       } else {
