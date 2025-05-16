@@ -15,7 +15,10 @@ const NotificationBadge = ({ count }: { count: number }) => {
   );
 };
 
-export default function BottomTabBar() {
+// We're accepting any props from the Tabs component but using our own navigation logic
+type BottomTabBarProps = any;
+
+export default function BottomTabBar(_props: BottomTabBarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { newMatchCount, resetMatchCount } = useNotification();
