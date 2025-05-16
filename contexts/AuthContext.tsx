@@ -125,6 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   
   // Fetch user profile from database
   const fetchUserProfile = async (authUser: SupabaseUser): Promise<UserProfile | null> => {
+    log.info('[AUTH fetchUserProfile CALLED]', { userId: authUser?.id });
     if (!authUser?.id) {
       log.warn('fetchUserProfile called with invalid auth user');
       return null;
@@ -188,7 +189,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
   
   // Fetch current user and profile
-  const fetchCurrentUser = async (): Promise<UserProfile | null> => {
+  const fetchCurrentUser = async (optionalUserId?: string): Promise<UserProfile | null> => {
+    log.info(`[AUTH fetchCurrentUser CALLED] Optional User ID passed: ${optionalUserId}`);
     try {
       log.info('Fetching current user session');
       
@@ -431,7 +433,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (event === 'SIGNED_IN') {
           log.info('User signed in', { userId: session?.user?.id });
           if (session?.user) {
-            await fetchUserProfile(session.user);
+            log.info('[AUTH onAuthStateChange SIGNED_IN] BEFORE fetchCurrentUser. Current userProfile value in AuthContext:', userProfile);
+            await fetchCurrentUser(session.user.id);
+            log.info('[AUTH onAuthStateChange SIGNED_IN] AFTER fetchCurrentUser. Current userProfile value in AuthContext:', userProfile);
           }
         } else if (event === 'SIGNED_OUT') {
           log.info('User signed out');
